@@ -1323,10 +1323,1248 @@ TEST(supports_jsonrpc_batching_at_runtime) {
   auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
   auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
   auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
   EXPECT_TRUE(
       sourcemeta::core::mcp_supports_jsonrpc_batching(version_2025_03_26));
   EXPECT_FALSE(
       sourcemeta::core::mcp_supports_jsonrpc_batching(version_2025_06_18));
   EXPECT_FALSE(
       sourcemeta::core::mcp_supports_jsonrpc_batching(version_2025_11_25));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_jsonrpc_batching(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_initialization_handshake) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_uses_initialization_handshake(version_2025_03_26));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_uses_initialization_handshake(version_2025_06_18));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_uses_initialization_handshake(version_2025_11_25));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_uses_initialization_handshake(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_ping) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_ping(version_2025_03_26));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_ping(version_2025_06_18));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_ping(version_2025_11_25));
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_ping(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_protocol_sessions) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_protocol_sessions(version_2025_03_26));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_protocol_sessions(version_2025_06_18));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_protocol_sessions(version_2025_11_25));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_protocol_sessions(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_requires_request_meta) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_FALSE(sourcemeta::core::mcp_requires_request_meta(version_2025_03_26));
+  EXPECT_FALSE(sourcemeta::core::mcp_requires_request_meta(version_2025_06_18));
+  EXPECT_FALSE(sourcemeta::core::mcp_requires_request_meta(version_2025_11_25));
+  EXPECT_TRUE(sourcemeta::core::mcp_requires_request_meta(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_requires_result_type) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_FALSE(sourcemeta::core::mcp_requires_result_type(version_2025_03_26));
+  EXPECT_FALSE(sourcemeta::core::mcp_requires_result_type(version_2025_06_18));
+  EXPECT_FALSE(sourcemeta::core::mcp_requires_result_type(version_2025_11_25));
+  EXPECT_TRUE(sourcemeta::core::mcp_requires_result_type(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_requires_cacheable_metadata) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_requires_cacheable_metadata(version_2025_03_26));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_requires_cacheable_metadata(version_2025_06_18));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_requires_cacheable_metadata(version_2025_11_25));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_requires_cacheable_metadata(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_supports_server_discover) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_server_discover(version_2025_03_26));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_server_discover(version_2025_06_18));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_server_discover(version_2025_11_25));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_server_discover(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_supports_subscriptions_listen) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_subscriptions_listen(version_2025_03_26));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_subscriptions_listen(version_2025_06_18));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_subscriptions_listen(version_2025_11_25));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_subscriptions_listen(version_2026_07_28));
+}
+
+TEST(protocol_era_predicates_supports_mrtr) {
+  auto version_2025_03_26{sourcemeta::core::MCPProtocolVersion::V_2025_03_26};
+  auto version_2025_06_18{sourcemeta::core::MCPProtocolVersion::V_2025_06_18};
+  auto version_2025_11_25{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_2026_07_28{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_mrtr(version_2025_03_26));
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_mrtr(version_2025_06_18));
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_mrtr(version_2025_11_25));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_mrtr(version_2026_07_28));
+}
+
+TEST(method_era_predicates_at_runtime) {
+  std::string method_init{sourcemeta::core::MCP_METHOD_INITIALIZE};
+  std::string method_ping{sourcemeta::core::MCP_METHOD_PING};
+  std::string method_init_notif{
+      sourcemeta::core::MCP_METHOD_NOTIFICATIONS_INITIALIZED};
+  std::string method_discover{sourcemeta::core::MCP_METHOD_SERVER_DISCOVER};
+  std::string method_listen{sourcemeta::core::MCP_METHOD_SUBSCRIPTIONS_LISTEN};
+  std::string method_sub_ack{
+      sourcemeta::core::MCP_METHOD_NOTIFICATIONS_SUBSCRIPTIONS_ACKNOWLEDGED};
+  std::string method_tools_list{sourcemeta::core::MCP_METHOD_TOOLS_LIST};
+  std::string method_tools_call{sourcemeta::core::MCP_METHOD_TOOLS_CALL};
+  std::string method_resources_list{
+      sourcemeta::core::MCP_METHOD_RESOURCES_LIST};
+  std::string method_resources_read{
+      sourcemeta::core::MCP_METHOD_RESOURCES_READ};
+  std::string method_resources_templates_list{
+      sourcemeta::core::MCP_METHOD_RESOURCES_TEMPLATES_LIST};
+  std::string method_custom{"custom/unknownMethod"};
+
+  // Legacy-only checks
+  EXPECT_TRUE(sourcemeta::core::mcp_is_legacy_only_method(method_init));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_legacy_only_method(method_ping));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_legacy_only_method(method_init_notif));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method(method_discover));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method(method_listen));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method(method_sub_ack));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method(method_tools_list));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method(method_custom));
+
+  // Modern-only checks
+  EXPECT_TRUE(sourcemeta::core::mcp_is_modern_only_method(method_discover));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_modern_only_method(method_listen));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_modern_only_method(method_sub_ack));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_modern_only_method(method_init));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_modern_only_method(method_ping));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_modern_only_method(method_tools_list));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_modern_only_method(method_custom));
+
+  // Shared checks
+  EXPECT_TRUE(sourcemeta::core::mcp_is_shared_method(method_tools_list));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_shared_method(method_tools_call));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_shared_method(method_resources_list));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_shared_method(method_resources_read));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_shared_method(method_resources_templates_list));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_shared_method(method_init));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_shared_method(method_discover));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_shared_method(method_custom));
+
+  // Supports method across versions
+  auto version_legacy{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  auto version_modern{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_method(version_legacy, method_init));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_method(version_modern, method_init));
+
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_method(version_legacy, method_discover));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_method(version_modern, method_discover));
+
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_method(version_legacy, method_tools_list));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_supports_method(version_modern, method_tools_list));
+
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_method(version_legacy, method_custom));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_supports_method(version_modern, method_custom));
+}
+
+TEST(latest_initialization_version) {
+  auto version{sourcemeta::core::mcp_latest_initialization_version()};
+  EXPECT_EQ(version, sourcemeta::core::MCPProtocolVersion::V_2025_11_25);
+}
+
+TEST(method_server_discover) {
+  EXPECT_EQ(sourcemeta::core::MCP_METHOD_SERVER_DISCOVER, "server/discover");
+}
+
+TEST(method_subscriptions_listen) {
+  EXPECT_EQ(sourcemeta::core::MCP_METHOD_SUBSCRIPTIONS_LISTEN,
+            "subscriptions/listen");
+}
+
+TEST(method_notifications_subscriptions_acknowledged) {
+  EXPECT_EQ(
+      sourcemeta::core::MCP_METHOD_NOTIFICATIONS_SUBSCRIPTIONS_ACKNOWLEDGED,
+      "notifications/subscriptions/acknowledged");
+}
+
+TEST(version_aware_request_methods_legacy) {
+  const auto version{sourcemeta::core::MCPProtocolVersion::V_2025_11_25};
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(version, "initialize"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(version, "ping"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(version, "tools/list"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(version, "tools/call"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_request_method(version, "resources/list"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_request_method(version, "resources/read"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(
+      version, "resources/templates/list"));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_is_request_method(version, "server/discover"));
+  EXPECT_FALSE(
+      sourcemeta::core::mcp_is_request_method(version, "subscriptions/listen"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_request_method(
+      version, "notifications/initialized"));
+}
+
+TEST(version_aware_request_methods_modern) {
+  const auto version{sourcemeta::core::MCPProtocolVersion::V_2026_07_28};
+  EXPECT_FALSE(sourcemeta::core::mcp_is_request_method(version, "initialize"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_request_method(version, "ping"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_request_method(version, "server/discover"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(version, "tools/list"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(version, "tools/call"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_request_method(version, "resources/list"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_request_method(version, "resources/read"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_request_method(
+      version, "resources/templates/list"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_request_method(version, "subscriptions/listen"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_request_method(
+      version, "notifications/initialized"));
+}
+
+TEST(code_header_mismatch) {
+  EXPECT_EQ(sourcemeta::core::MCP_CODE_HEADER_MISMATCH,
+            static_cast<std::int64_t>(-32020));
+}
+
+TEST(code_missing_required_client_capability) {
+  EXPECT_EQ(sourcemeta::core::MCP_CODE_MISSING_REQUIRED_CLIENT_CAPABILITY,
+            static_cast<std::int64_t>(-32021));
+}
+
+TEST(code_unsupported_protocol_version) {
+  EXPECT_EQ(sourcemeta::core::MCP_CODE_UNSUPPORTED_PROTOCOL_VERSION,
+            static_cast<std::int64_t>(-32022));
+}
+
+TEST(cache_scope_strings) {
+  EXPECT_EQ(sourcemeta::core::mcp_cache_scope_string(
+                sourcemeta::core::MCPCacheScope::Public),
+            "public");
+  EXPECT_EQ(sourcemeta::core::mcp_cache_scope_string(
+                sourcemeta::core::MCPCacheScope::Private),
+            "private");
+}
+
+TEST(cache_scope_parsing) {
+  EXPECT_EQ(sourcemeta::core::mcp_resolve_cache_scope("public"),
+            sourcemeta::core::MCPCacheScope::Public);
+  EXPECT_EQ(sourcemeta::core::mcp_resolve_cache_scope("private"),
+            sourcemeta::core::MCPCacheScope::Private);
+  EXPECT_EQ(sourcemeta::core::mcp_resolve_cache_scope("shared"), std::nullopt);
+}
+
+TEST(request_meta_validation_valid_minimum) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/list",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
+    }
+  })JSON")};
+
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status, sourcemeta::core::MCPRequestMetaStatus::Valid);
+  EXPECT_TRUE(meta.has_value());
+  EXPECT_EQ(meta->protocol_version,
+            sourcemeta::core::MCPProtocolVersion::V_2026_07_28);
+  EXPECT_NE(meta->client_capabilities, nullptr);
+  EXPECT_TRUE(meta->client_capabilities->is_object());
+  EXPECT_FALSE(meta->client_info.has_value());
+  EXPECT_FALSE(meta->log_level.has_value());
+}
+
+TEST(request_meta_validation_valid_with_client_info_and_log_level) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientCapabilities": { "roots": { "listChanged": true } },
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "client-one",
+          "version": "1.2.3",
+          "title": "Client Title",
+          "description": "Client Description"
+        },
+        "io.modelcontextprotocol/logLevel": "debug",
+        "customExtension": 42
+      },
+      "name": "compute"
+    }
+  })JSON")};
+
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status, sourcemeta::core::MCPRequestMetaStatus::Valid);
+  EXPECT_TRUE(meta.has_value());
+  EXPECT_TRUE(meta->client_info.has_value());
+  EXPECT_EQ(meta->client_info->name, "client-one");
+  EXPECT_EQ(meta->client_info->version, "1.2.3");
+  EXPECT_EQ(meta->client_info->title, "Client Title");
+  EXPECT_EQ(meta->client_info->description, "Client Description");
+  EXPECT_TRUE(meta->log_level.has_value());
+  EXPECT_EQ(meta->log_level.value(), "debug");
+  EXPECT_NE(meta->meta_object, nullptr);
+  EXPECT_TRUE(meta->meta_object->defines("customExtension"));
+}
+
+TEST(request_meta_validation_missing_params) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list"
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status, sourcemeta::core::MCPRequestMetaStatus::MissingParams);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_params_not_object) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": [ 1, 2 ]
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status, sourcemeta::core::MCPRequestMetaStatus::ParamsNotObject);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_missing_meta) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": { "name": "test" }
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status, sourcemeta::core::MCPRequestMetaStatus::MissingMeta);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_meta_not_object) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": { "_meta": "invalid" }
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status, sourcemeta::core::MCPRequestMetaStatus::MetaNotObject);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_missing_protocol_version) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+    "params": { "_meta": { "io.modelcontextprotocol/clientCapabilities": {} } }
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status,
+            sourcemeta::core::MCPRequestMetaStatus::MissingProtocolVersion);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_protocol_version_not_string) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+    "params": { "_meta": {
+      "io.modelcontextprotocol/protocolVersion": 2026,
+      "io.modelcontextprotocol/clientCapabilities": {}
+    } }
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status,
+            sourcemeta::core::MCPRequestMetaStatus::ProtocolVersionNotString);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_unsupported_protocol_version) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+    "params": { "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "1900-01-01",
+      "io.modelcontextprotocol/clientCapabilities": {}
+    } }
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status,
+            sourcemeta::core::MCPRequestMetaStatus::UnsupportedProtocolVersion);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_missing_client_capabilities) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+    "params": { "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28"
+    } }
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status,
+            sourcemeta::core::MCPRequestMetaStatus::MissingClientCapabilities);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(request_meta_validation_client_capabilities_not_object) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+    "params": { "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+      "io.modelcontextprotocol/clientCapabilities": "not-an-object"
+    } }
+  })JSON")};
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(
+      status,
+      sourcemeta::core::MCPRequestMetaStatus::ClientCapabilitiesNotObject);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(body_extraction_method) {
+  const auto req{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {}
+  })JSON")};
+  EXPECT_EQ(sourcemeta::core::mcp_request_method_from_body(req), "tools/call");
+
+  const auto invalid{
+      sourcemeta::core::parse_json(R"JSON({ "foo": "bar" })JSON")};
+  EXPECT_EQ(sourcemeta::core::mcp_request_method_from_body(invalid),
+            std::nullopt);
+}
+
+TEST(body_extraction_name) {
+  const auto tool_call{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+    "params": { "name": "my-tool", "arguments": {} }
+  })JSON")};
+  EXPECT_EQ(sourcemeta::core::mcp_request_name_from_body(tool_call), "my-tool");
+
+  const auto res_read{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "resources/read",
+    "params": { "uri": "file:///path/to/file" }
+  })JSON")};
+  EXPECT_EQ(sourcemeta::core::mcp_request_name_from_body(res_read),
+            "file:///path/to/file");
+
+  const auto neither{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+    "params": {}
+  })JSON")};
+  EXPECT_EQ(sourcemeta::core::mcp_request_name_from_body(neither),
+            std::nullopt);
+}
+
+TEST(error_unsupported_protocol_version) {
+  const auto identifier{sourcemeta::core::JSON{10}};
+  const std::vector<sourcemeta::core::JSON::StringView> supported{"2026-07-28",
+                                                                  "2025-11-25"};
+  const auto envelope{
+      sourcemeta::core::mcp_make_error_unsupported_protocol_version(
+          &identifier, "1900-01-01", supported)};
+
+  EXPECT_EQ(envelope.at("error").at("code").to_integer(), -32022);
+  EXPECT_EQ(envelope.at("error").at("message").to_string(),
+            "Unsupported protocol version");
+  EXPECT_EQ(envelope.at("error").at("data").at("requested").to_string(),
+            "1900-01-01");
+  EXPECT_EQ(envelope.at("error").at("data").at("supported").size(), 2);
+  EXPECT_EQ(envelope.at("error").at("data").at("supported").at(0).to_string(),
+            "2026-07-28");
+  EXPECT_EQ(envelope.at("error").at("data").at("supported").at(1).to_string(),
+            "2025-11-25");
+}
+
+TEST(error_missing_required_capability) {
+  const auto identifier{sourcemeta::core::JSON{11}};
+  auto required{sourcemeta::core::JSON::make_object()};
+  required.assign("elicitation", sourcemeta::core::JSON::make_object());
+
+  const auto envelope{
+      sourcemeta::core::mcp_make_error_missing_required_capability(
+          &identifier, std::move(required))};
+
+  EXPECT_EQ(envelope.at("error").at("code").to_integer(), -32021);
+  EXPECT_EQ(envelope.at("error").at("message").to_string(),
+            "Missing required client capability");
+  EXPECT_TRUE(envelope.at("error")
+                  .at("data")
+                  .at("requiredCapabilities")
+                  .defines("elicitation"));
+}
+
+TEST(error_header_mismatch) {
+  const auto identifier{sourcemeta::core::JSON{12}};
+  const auto envelope{sourcemeta::core::mcp_make_error_header_mismatch(
+      &identifier, "Mcp-Method header does not match body method")};
+
+  EXPECT_EQ(envelope.at("error").at("code").to_integer(), -32020);
+  EXPECT_EQ(envelope.at("error").at("message").to_string(),
+            "Mcp-Method header does not match body method");
+}
+
+TEST(error_resource_not_found_version_aware) {
+  const auto identifier{sourcemeta::core::JSON{13}};
+
+  const auto modern_err{sourcemeta::core::mcp_make_error_resource_not_found(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, identifier)};
+  EXPECT_EQ(modern_err.at("error").at("code").to_integer(), -32602);
+  EXPECT_EQ(modern_err.at("error").at("message").to_string(),
+            "Resource not found");
+
+  const auto legacy_err{sourcemeta::core::mcp_make_error_resource_not_found(
+      sourcemeta::core::MCPProtocolVersion::V_2025_11_25, identifier)};
+  EXPECT_EQ(legacy_err.at("error").at("code").to_integer(), -32002);
+  EXPECT_EQ(legacy_err.at("error").at("message").to_string(),
+            "Resource not found");
+
+  const auto default_err{
+      sourcemeta::core::mcp_make_error_resource_not_found(identifier)};
+  EXPECT_EQ(default_err.at("error").at("code").to_integer(), -32002);
+}
+
+TEST(decorate_result_modern_and_legacy) {
+  auto result_legacy{sourcemeta::core::JSON::make_object()};
+  result_legacy.assign("status", sourcemeta::core::JSON{"ok"});
+  const auto decorated_legacy{sourcemeta::core::mcp_decorate_result(
+      sourcemeta::core::MCPProtocolVersion::V_2025_11_25,
+      std::move(result_legacy))};
+  EXPECT_FALSE(decorated_legacy.defines("resultType"));
+  EXPECT_FALSE(decorated_legacy.defines("_meta"));
+
+  auto result_modern{sourcemeta::core::JSON::make_object()};
+  result_modern.assign("status", sourcemeta::core::JSON{"ok"});
+  const sourcemeta::core::MCPImplementation server{.name = "ExampleServer",
+                                                   .version = "1.0.0",
+                                                   .title = "Example Title",
+                                                   .description = "Description",
+                                                   .website_url =
+                                                       "https://ex.com"};
+  const auto decorated_modern{sourcemeta::core::mcp_decorate_result(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28,
+      std::move(result_modern), server)};
+  EXPECT_EQ(decorated_modern.at("resultType").to_string(), "complete");
+  EXPECT_TRUE(decorated_modern.defines("_meta"));
+  const auto &info{
+      decorated_modern.at("_meta").at("io.modelcontextprotocol/serverInfo")};
+  EXPECT_EQ(info.at("name").to_string(), "ExampleServer");
+  EXPECT_EQ(info.at("version").to_string(), "1.0.0");
+  EXPECT_EQ(info.at("title").to_string(), "Example Title");
+  EXPECT_EQ(info.at("description").to_string(), "Description");
+  EXPECT_EQ(info.at("websiteUrl").to_string(), "https://ex.com");
+}
+
+TEST(decorate_cacheable_result_modern_and_legacy) {
+  auto res_legacy{sourcemeta::core::JSON::make_object()};
+  const sourcemeta::core::MCPCachePolicy policy{
+      .ttl_ms = 60000, .scope = sourcemeta::core::MCPCacheScope::Private};
+  const auto decorated_legacy{sourcemeta::core::mcp_decorate_cacheable_result(
+      sourcemeta::core::MCPProtocolVersion::V_2025_11_25, std::move(res_legacy),
+      policy)};
+  EXPECT_FALSE(decorated_legacy.defines("ttlMs"));
+  EXPECT_FALSE(decorated_legacy.defines("cacheScope"));
+
+  auto res_modern{sourcemeta::core::JSON::make_object()};
+  const auto decorated_modern{sourcemeta::core::mcp_decorate_cacheable_result(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, std::move(res_modern),
+      policy)};
+  EXPECT_EQ(decorated_modern.at("ttlMs").to_integer(), 60000);
+  EXPECT_EQ(decorated_modern.at("cacheScope").to_string(), "private");
+}
+
+TEST(tool_success_modern_result_type_and_structured_content) {
+  const auto identifier{sourcemeta::core::JSON{100}};
+
+  // Structured content with object
+  auto struct_obj{sourcemeta::core::JSON::make_object()};
+  struct_obj.assign("foo", sourcemeta::core::JSON{123});
+  const auto env_obj{sourcemeta::core::mcp_make_tool_success(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, identifier,
+      std::move(struct_obj))};
+  EXPECT_EQ(env_obj.at("result").at("resultType").to_string(), "complete");
+  EXPECT_EQ(env_obj.at("result").at("isError").to_boolean(), false);
+  EXPECT_EQ(env_obj.at("result").at("structuredContent").at("foo").to_integer(),
+            123);
+
+  // Structured content with array
+  auto struct_arr{sourcemeta::core::JSON::make_array()};
+  struct_arr.push_back(sourcemeta::core::JSON{"item"});
+  const auto env_arr{sourcemeta::core::mcp_make_tool_success(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, identifier,
+      std::move(struct_arr))};
+  EXPECT_EQ(env_arr.at("result").at("resultType").to_string(), "complete");
+  EXPECT_TRUE(env_arr.at("result").at("structuredContent").is_array());
+
+  // Structured content with scalar string
+  const auto env_str{sourcemeta::core::mcp_make_tool_success(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, identifier,
+      sourcemeta::core::JSON{"hello scalar"})};
+  EXPECT_EQ(env_str.at("result").at("resultType").to_string(), "complete");
+  EXPECT_EQ(env_str.at("result").at("structuredContent").to_string(),
+            "hello scalar");
+
+  // Structured content with null
+  const auto env_null{sourcemeta::core::mcp_make_tool_success(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, identifier,
+      sourcemeta::core::JSON{nullptr})};
+  EXPECT_EQ(env_null.at("result").at("resultType").to_string(), "complete");
+  EXPECT_TRUE(env_null.at("result").at("structuredContent").is_null());
+}
+
+TEST(tool_error_modern_result_type) {
+  const auto identifier{sourcemeta::core::JSON{101}};
+  const auto modern_err{sourcemeta::core::mcp_make_tool_error(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, identifier,
+      "Something failed")};
+  EXPECT_EQ(modern_err.at("result").at("resultType").to_string(), "complete");
+  EXPECT_EQ(modern_err.at("result").at("isError").to_boolean(), true);
+  EXPECT_EQ(modern_err.at("result").at("content").at(0).at("text").to_string(),
+            "Something failed");
+
+  const auto legacy_err{sourcemeta::core::mcp_make_tool_error(
+      sourcemeta::core::MCPProtocolVersion::V_2025_11_25, identifier,
+      "Something failed")};
+  EXPECT_FALSE(legacy_err.at("result").defines("resultType"));
+  EXPECT_EQ(legacy_err.at("result").at("isError").to_boolean(), true);
+}
+
+TEST(resources_read_result_modern_and_legacy) {
+  auto contents{sourcemeta::core::JSON::make_array()};
+  contents.push_back(sourcemeta::core::mcp_make_resource_text_content(
+      "file:///a", "text/plain", "data"));
+
+  const sourcemeta::core::MCPCachePolicy policy{
+      .ttl_ms = 30000, .scope = sourcemeta::core::MCPCacheScope::Public};
+  const auto modern_res{sourcemeta::core::mcp_make_resources_read_result(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28,
+      sourcemeta::core::JSON{contents}, policy)};
+  EXPECT_EQ(modern_res.at("resultType").to_string(), "complete");
+  EXPECT_EQ(modern_res.at("ttlMs").to_integer(), 30000);
+  EXPECT_EQ(modern_res.at("cacheScope").to_string(), "public");
+  EXPECT_EQ(modern_res.at("contents").size(), 1);
+
+  const auto legacy_res{sourcemeta::core::mcp_make_resources_read_result(
+      sourcemeta::core::MCPProtocolVersion::V_2025_11_25, std::move(contents),
+      policy)};
+  EXPECT_FALSE(legacy_res.defines("resultType"));
+  EXPECT_FALSE(legacy_res.defines("ttlMs"));
+  EXPECT_FALSE(legacy_res.defines("cacheScope"));
+}
+
+TEST(supported_protocol_versions) {
+  const auto versions{sourcemeta::core::mcp_supported_protocol_versions()};
+  EXPECT_EQ(versions.size(), 4);
+  EXPECT_EQ(versions.at(0), "2026-07-28");
+  EXPECT_EQ(versions.at(1), "2025-11-25");
+  EXPECT_EQ(versions.at(2), "2025-06-18");
+  EXPECT_EQ(versions.at(3), "2025-03-26");
+}
+
+TEST(server_discover_result) {
+  const auto identifier{sourcemeta::core::JSON{1}};
+  sourcemeta::core::MCPServerCapabilities caps;
+  caps.tools = true;
+  caps.tools_list_changed = true;
+  caps.resources = true;
+  caps.resources_subscribe = true;
+
+  const sourcemeta::core::MCPImplementation server{.name = "TestServer",
+                                                   .version = "2.0.0"};
+  const sourcemeta::core::MCPCachePolicy cache{
+      .ttl_ms = 3600000, .scope = sourcemeta::core::MCPCacheScope::Public};
+
+  const auto envelope{sourcemeta::core::mcp_make_server_discover_result(
+      identifier, caps, server, {}, "Instructions here", cache)};
+
+  const auto &result{envelope.at("result")};
+  EXPECT_EQ(result.at("resultType").to_string(), "complete");
+  EXPECT_EQ(result.at("supportedVersions").size(), 4);
+  EXPECT_EQ(result.at("supportedVersions").at(0).to_string(), "2026-07-28");
+  EXPECT_TRUE(
+      result.at("capabilities").at("tools").at("listChanged").to_boolean());
+  EXPECT_TRUE(
+      result.at("capabilities").at("resources").at("subscribe").to_boolean());
+  EXPECT_EQ(result.at("_meta")
+                .at("io.modelcontextprotocol/serverInfo")
+                .at("name")
+                .to_string(),
+            "TestServer");
+  EXPECT_EQ(result.at("_meta")
+                .at("io.modelcontextprotocol/serverInfo")
+                .at("version")
+                .to_string(),
+            "2.0.0");
+  EXPECT_EQ(result.at("instructions").to_string(), "Instructions here");
+  EXPECT_EQ(result.at("ttlMs").to_integer(), 3600000);
+  EXPECT_EQ(result.at("cacheScope").to_string(), "public");
+}
+
+TEST(initialize_negotiation_with_modern_request) {
+  // If an older client calls initialize with protocolVersion = "2026-07-28",
+  // the server MUST NOT negotiate 2026-07-28 because initialize was removed.
+  // It must negotiate the latest handshake-compatible version (2025-11-25).
+  const auto request{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": { "protocolVersion": "2026-07-28" }
+  })JSON")};
+
+  const sourcemeta::core::MCPServerCapabilities caps;
+  const sourcemeta::core::MCPImplementation server{.name = "srv",
+                                                   .version = "1.0.0"};
+  const auto envelope{
+      sourcemeta::core::mcp_make_initialize_result(request, caps, server)};
+
+  EXPECT_EQ(envelope.at("result").at("protocolVersion").to_string(),
+            "2025-11-25");
+  EXPECT_FALSE(envelope.at("result").defines("resultType"));
+  EXPECT_FALSE(envelope.at("result").defines("_meta"));
+}
+
+TEST(initialize_negotiation_with_unknown_version) {
+  const auto request{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": { "protocolVersion": "3000-01-01" }
+  })JSON")};
+
+  const sourcemeta::core::MCPServerCapabilities caps;
+  const sourcemeta::core::MCPImplementation server{.name = "srv",
+                                                   .version = "1.0.0"};
+  const auto envelope{
+      sourcemeta::core::mcp_make_initialize_result(request, caps, server)};
+
+  EXPECT_EQ(envelope.at("result").at("protocolVersion").to_string(),
+            "2025-11-25");
+}
+
+TEST(mrtr_input_required_result) {
+  const auto identifier{sourcemeta::core::JSON{50}};
+  auto input_requests{sourcemeta::core::JSON::make_object()};
+  auto req{sourcemeta::core::JSON::make_object()};
+  req.assign("type", sourcemeta::core::JSON{"elicitation"});
+  req.assign("message", sourcemeta::core::JSON{"Confirm delete?"});
+  input_requests.assign("confirm", std::move(req));
+
+  const auto envelope{sourcemeta::core::mcp_make_input_required_result(
+      identifier, std::move(input_requests), "opaque-state-token-123")};
+
+  const auto &res{envelope.at("result")};
+  EXPECT_EQ(res.at("resultType").to_string(), "input_required");
+  EXPECT_EQ(res.at("inputRequests").at("confirm").at("message").to_string(),
+            "Confirm delete?");
+  EXPECT_EQ(res.at("requestState").to_string(), "opaque-state-token-123");
+}
+
+TEST(mrtr_request_accessors) {
+  const auto continuation{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 51,
+    "method": "tools/call",
+    "params": {
+      "name": "my-tool",
+      "requestState": "token-xyz",
+      "inputResponses": {
+        "confirm": { "value": true }
+      }
+    }
+  })JSON")};
+
+  EXPECT_EQ(sourcemeta::core::mcp_request_state(continuation), "token-xyz");
+  const auto *responses{
+      sourcemeta::core::mcp_request_input_responses(continuation)};
+  EXPECT_NE(responses, nullptr);
+  EXPECT_TRUE(responses->is_object());
+  EXPECT_EQ(responses->at("confirm").at("value").to_boolean(), true);
+}
+
+TEST(subscriptions_acknowledged_notification) {
+  auto notifs{sourcemeta::core::JSON::make_object()};
+  notifs.assign("toolsListChanged", sourcemeta::core::JSON{true});
+
+  const auto envelope{
+      sourcemeta::core::mcp_make_subscription_acknowledged_notification(
+          "sub-42", std::move(notifs))};
+
+  EXPECT_EQ(envelope.at("jsonrpc").to_string(), "2.0");
+  EXPECT_EQ(envelope.at("method").to_string(),
+            "notifications/subscriptions/acknowledged");
+  EXPECT_EQ(envelope.at("params")
+                .at("_meta")
+                .at("io.modelcontextprotocol/subscriptionId")
+                .to_string(),
+            "sub-42");
+  EXPECT_TRUE(envelope.at("params")
+                  .at("notifications")
+                  .at("toolsListChanged")
+                  .to_boolean());
+}
+
+TEST(subscriptions_close_result) {
+  const auto identifier{sourcemeta::core::JSON{60}};
+  const auto envelope{sourcemeta::core::mcp_make_subscription_close_result(
+      identifier, "sub-42")};
+
+  EXPECT_EQ(envelope.at("result").at("resultType").to_string(), "complete");
+  EXPECT_EQ(envelope.at("result")
+                .at("_meta")
+                .at("io.modelcontextprotocol/subscriptionId")
+                .to_string(),
+            "sub-42");
+}
+
+TEST(subscriptions_id_accessor) {
+  const auto notification{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "method": "notifications/subscriptions/acknowledged",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/subscriptionId": "stream-99"
+      }
+    }
+  })JSON")};
+  EXPECT_EQ(sourcemeta::core::mcp_request_subscription_id(notification),
+            "stream-99");
+
+  const auto close_res{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "resultType": "complete",
+      "_meta": {
+        "io.modelcontextprotocol/subscriptionId": "stream-99"
+      }
+    }
+  })JSON")};
+  EXPECT_EQ(sourcemeta::core::mcp_request_subscription_id(close_res),
+            "stream-99");
+}
+
+TEST(method_era_classification) {
+  using sourcemeta::core::MCPMethodEra;
+  using sourcemeta::core::MCPProtocolVersion;
+
+  // Legacy-only methods
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("initialize"),
+            MCPMethodEra::LegacyOnly);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("ping"),
+            MCPMethodEra::LegacyOnly);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("notifications/initialized"),
+            MCPMethodEra::LegacyOnly);
+  EXPECT_TRUE(sourcemeta::core::mcp_is_legacy_only_method("initialize"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_legacy_only_method("ping"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_legacy_only_method("notifications/initialized"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_modern_only_method("initialize"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_shared_method("initialize"));
+
+  // Modern-only methods
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("server/discover"),
+            MCPMethodEra::ModernOnly);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("subscriptions/listen"),
+            MCPMethodEra::ModernOnly);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method(
+                "notifications/subscriptions/acknowledged"),
+            MCPMethodEra::ModernOnly);
+  EXPECT_TRUE(sourcemeta::core::mcp_is_modern_only_method("server/discover"));
+  EXPECT_TRUE(
+      sourcemeta::core::mcp_is_modern_only_method("subscriptions/listen"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method("server/discover"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_shared_method("server/discover"));
+
+  // Shared methods
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("tools/list"),
+            MCPMethodEra::Shared);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("tools/call"),
+            MCPMethodEra::Shared);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("resources/list"),
+            MCPMethodEra::Shared);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("resources/read"),
+            MCPMethodEra::Shared);
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("resources/templates/list"),
+            MCPMethodEra::Shared);
+  EXPECT_TRUE(sourcemeta::core::mcp_is_shared_method("tools/list"));
+  EXPECT_TRUE(sourcemeta::core::mcp_is_shared_method("resources/read"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method("tools/list"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_modern_only_method("tools/list"));
+
+  // Unsupported method
+  EXPECT_EQ(sourcemeta::core::mcp_classify_method("unknown/method"),
+            MCPMethodEra::Unsupported);
+  EXPECT_FALSE(sourcemeta::core::mcp_is_legacy_only_method("unknown/method"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_modern_only_method("unknown/method"));
+  EXPECT_FALSE(sourcemeta::core::mcp_is_shared_method("unknown/method"));
+
+  // Version-support checks
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2025_11_25, "initialize"));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2025_11_25, "ping"));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2025_11_25, "tools/list"));
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2025_11_25, "server/discover"));
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2025_11_25, "subscriptions/listen"));
+
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2026_07_28, "initialize"));
+  EXPECT_FALSE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2026_07_28, "ping"));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2026_07_28, "tools/list"));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2026_07_28, "server/discover"));
+  EXPECT_TRUE(sourcemeta::core::mcp_supports_method(
+      MCPProtocolVersion::V_2026_07_28, "subscriptions/listen"));
+}
+
+TEST(client_capabilities_parsing_and_serialization) {
+  sourcemeta::core::MCPClientCapabilities caps;
+  caps.roots = true;
+  caps.roots_list_changed = true;
+  caps.sampling = true;
+  caps.elicitation = true;
+
+  auto ext{sourcemeta::core::JSON::make_object()};
+  ext.assign("customCapability", sourcemeta::core::JSON{true});
+  caps.extensions = std::move(ext);
+
+  const auto serialized{
+      sourcemeta::core::mcp_serialize_client_capabilities(caps)};
+  EXPECT_TRUE(serialized.at("roots").at("listChanged").to_boolean());
+  EXPECT_TRUE(serialized.defines("sampling"));
+  EXPECT_TRUE(serialized.defines("elicitation"));
+  EXPECT_TRUE(serialized.at("extensions").at("customCapability").to_boolean());
+
+  const auto parsed{
+      sourcemeta::core::mcp_parse_client_capabilities(serialized)};
+  EXPECT_TRUE(parsed.roots);
+  EXPECT_TRUE(parsed.roots_list_changed);
+  EXPECT_TRUE(parsed.sampling);
+  EXPECT_TRUE(parsed.elicitation);
+  EXPECT_TRUE(parsed.extensions.has_value());
+  EXPECT_TRUE(parsed.extensions->at("customCapability").to_boolean());
+}
+
+TEST(request_meta_accessors) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 10,
+    "method": "tools/call",
+    "params": {
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientCapabilities": { "roots": { "listChanged": true } },
+        "io.modelcontextprotocol/clientInfo": {
+          "name": "tester",
+          "version": "1.0.0"
+        },
+        "io.modelcontextprotocol/logLevel": "info"
+      },
+      "name": "calc"
+    }
+  })JSON")};
+
+  EXPECT_TRUE(sourcemeta::core::mcp_has_required_request_meta(envelope));
+
+  const auto protocol_version{
+      sourcemeta::core::mcp_request_protocol_version(envelope)};
+  EXPECT_TRUE(protocol_version.has_value());
+  EXPECT_EQ(protocol_version.value(),
+            sourcemeta::core::MCPProtocolVersion::V_2026_07_28);
+
+  const auto client_info{sourcemeta::core::mcp_request_client_info(envelope)};
+  EXPECT_TRUE(client_info.has_value());
+  EXPECT_EQ(client_info->name, "tester");
+  EXPECT_EQ(client_info->version, "1.0.0");
+
+  const auto *caps{sourcemeta::core::mcp_request_client_capabilities(envelope)};
+  EXPECT_NE(caps, nullptr);
+  EXPECT_TRUE(caps->at("roots").at("listChanged").to_boolean());
+
+  const auto log_level{sourcemeta::core::mcp_request_log_level(envelope)};
+  EXPECT_TRUE(log_level.has_value());
+  EXPECT_EQ(log_level.value(), "info");
+
+  // Invalid request
+  const auto invalid_req{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 11, "method": "tools/call"
+  })JSON")};
+  EXPECT_FALSE(sourcemeta::core::mcp_has_required_request_meta(invalid_req));
+  EXPECT_EQ(sourcemeta::core::mcp_request_protocol_version(invalid_req),
+            std::nullopt);
+  EXPECT_EQ(sourcemeta::core::mcp_request_client_info(invalid_req),
+            std::nullopt);
+  EXPECT_EQ(sourcemeta::core::mcp_request_client_capabilities(invalid_req),
+            nullptr);
+  EXPECT_EQ(sourcemeta::core::mcp_request_log_level(invalid_req), std::nullopt);
+}
+
+TEST(request_meta_validation_client_info_not_object) {
+  const auto envelope{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0", "id": 1, "method": "tools/list",
+    "params": { "_meta": {
+      "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+      "io.modelcontextprotocol/clientCapabilities": {},
+      "io.modelcontextprotocol/clientInfo": "not-an-object"
+    } }
+  })JSON")};
+
+  const auto [status,
+              meta]{sourcemeta::core::mcp_validate_request_meta(envelope)};
+  EXPECT_EQ(status,
+            sourcemeta::core::MCPRequestMetaStatus::ClientInfoNotObject);
+  EXPECT_FALSE(meta.has_value());
+}
+
+TEST(header_validation_and_mismatch_error) {
+  const auto req{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 42,
+    "method": "tools/call",
+    "params": {
+      "name": "my-tool"
+    }
+  })JSON")};
+
+  // Matching headers
+  const auto ok_res{sourcemeta::core::mcp_validate_request_headers(
+      "tools/call", "my-tool", req)};
+  EXPECT_FALSE(ok_res.has_value());
+
+  // Method mismatch
+  const auto method_err{sourcemeta::core::mcp_validate_request_headers(
+      "tools/list", "my-tool", req)};
+  EXPECT_TRUE(method_err.has_value());
+  EXPECT_EQ(method_err->at("error").at("code").to_integer(), -32020);
+  EXPECT_EQ(method_err->at("error").at("data").at("header").to_string(),
+            "Mcp-Method");
+  EXPECT_EQ(method_err->at("error").at("data").at("headerValue").to_string(),
+            "tools/list");
+  EXPECT_EQ(method_err->at("error").at("data").at("bodyValue").to_string(),
+            "tools/call");
+
+  // Name mismatch
+  const auto name_err{sourcemeta::core::mcp_validate_request_headers(
+      "tools/call", "other-tool", req)};
+  EXPECT_TRUE(name_err.has_value());
+  EXPECT_EQ(name_err->at("error").at("code").to_integer(), -32020);
+  EXPECT_EQ(name_err->at("error").at("data").at("header").to_string(),
+            "Mcp-Name");
+  EXPECT_EQ(name_err->at("error").at("data").at("headerValue").to_string(),
+            "other-tool");
+  EXPECT_EQ(name_err->at("error").at("data").at("bodyValue").to_string(),
+            "my-tool");
+}
+
+TEST(tools_list_result_modern_and_legacy) {
+  auto tools{sourcemeta::core::JSON::make_array()};
+  tools.push_back(sourcemeta::core::mcp_make_tool_descriptor(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, "calc", "Calculator",
+      sourcemeta::core::parse_json(R"({ "type": "object" })")));
+
+  const sourcemeta::core::MCPCachePolicy policy{
+      .ttl_ms = 120000, .scope = sourcemeta::core::MCPCacheScope::Public};
+
+  // Modern: has resultType, nextCursor, ttlMs, cacheScope
+  const auto modern_res{sourcemeta::core::mcp_make_tools_list_result(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28,
+      sourcemeta::core::JSON{tools}, "cursor-abc", policy)};
+  EXPECT_EQ(modern_res.at("resultType").to_string(), "complete");
+  EXPECT_EQ(modern_res.at("nextCursor").to_string(), "cursor-abc");
+  EXPECT_EQ(modern_res.at("ttlMs").to_integer(), 120000);
+  EXPECT_EQ(modern_res.at("cacheScope").to_string(), "public");
+  EXPECT_EQ(modern_res.at("tools").size(), 1);
+
+  // Legacy: omits resultType, ttlMs, cacheScope
+  const auto legacy_res{sourcemeta::core::mcp_make_tools_list_result(
+      sourcemeta::core::MCPProtocolVersion::V_2025_11_25, std::move(tools),
+      "cursor-abc", policy)};
+  EXPECT_FALSE(legacy_res.defines("resultType"));
+  EXPECT_FALSE(legacy_res.defines("ttlMs"));
+  EXPECT_FALSE(legacy_res.defines("cacheScope"));
+  EXPECT_EQ(legacy_res.at("nextCursor").to_string(), "cursor-abc");
+}
+
+TEST(resources_list_result_modern_and_legacy) {
+  auto resources{sourcemeta::core::JSON::make_array()};
+  resources.push_back(sourcemeta::core::mcp_make_resource("file:///doc.txt",
+                                                          "doc", "text/plain"));
+
+  const sourcemeta::core::MCPCachePolicy policy{
+      .ttl_ms = 60000, .scope = sourcemeta::core::MCPCacheScope::Private};
+
+  const auto modern_res{sourcemeta::core::mcp_make_resources_list_result(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28,
+      sourcemeta::core::JSON{resources}, "cursor-123", policy)};
+  EXPECT_EQ(modern_res.at("resultType").to_string(), "complete");
+  EXPECT_EQ(modern_res.at("nextCursor").to_string(), "cursor-123");
+  EXPECT_EQ(modern_res.at("ttlMs").to_integer(), 60000);
+  EXPECT_EQ(modern_res.at("cacheScope").to_string(), "private");
+
+  const auto legacy_res{sourcemeta::core::mcp_make_resources_list_result(
+      sourcemeta::core::MCPProtocolVersion::V_2025_11_25, std::move(resources),
+      "cursor-123", policy)};
+  EXPECT_FALSE(legacy_res.defines("resultType"));
+  EXPECT_FALSE(legacy_res.defines("ttlMs"));
+  EXPECT_FALSE(legacy_res.defines("cacheScope"));
+  EXPECT_EQ(legacy_res.at("nextCursor").to_string(), "cursor-123");
+}
+
+TEST(resource_templates_list_result_modern_and_legacy) {
+  auto templates{sourcemeta::core::JSON::make_array()};
+  templates.push_back(sourcemeta::core::mcp_make_resource_template(
+      "file:///{path}", "Files", "File access", "text/plain"));
+
+  const auto modern_res{
+      sourcemeta::core::mcp_make_resource_templates_list_result(
+          sourcemeta::core::MCPProtocolVersion::V_2026_07_28,
+          sourcemeta::core::JSON{templates}, "cursor-tmpl")};
+  EXPECT_EQ(modern_res.at("resultType").to_string(), "complete");
+  EXPECT_EQ(modern_res.at("nextCursor").to_string(), "cursor-tmpl");
+  EXPECT_FALSE(modern_res.defines("ttlMs"));
+
+  const auto legacy_res{
+      sourcemeta::core::mcp_make_resource_templates_list_result(
+          sourcemeta::core::MCPProtocolVersion::V_2025_11_25,
+          std::move(templates), "cursor-tmpl")};
+  EXPECT_FALSE(legacy_res.defines("resultType"));
+  EXPECT_EQ(legacy_res.at("nextCursor").to_string(), "cursor-tmpl");
+}
+
+TEST(make_tool_descriptor_2026_07_28_arbitrary_json_schema) {
+  // Arbitrary JSON Schema 2020-12 keywords
+  const auto input_schema{sourcemeta::core::parse_json(R"JSON({
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "$defs": {
+      "item": { "type": "string" }
+    },
+    "properties": {
+      "tags": {
+        "type": "array",
+        "prefixItems": [ { "$ref": "#/$defs/item" } ]
+      }
+    },
+    "dependentRequired": {
+      "tags": [ "name" ]
+    },
+    "unevaluatedProperties": false
+  })JSON")};
+
+  const auto output_schema{sourcemeta::core::parse_json(R"JSON({
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "status": { "type": "string" }
+    }
+  })JSON")};
+
+  const auto descriptor{sourcemeta::core::mcp_make_tool_descriptor(
+      sourcemeta::core::MCPProtocolVersion::V_2026_07_28, "advanced_tool",
+      "Tool using modern JSON Schema", input_schema, output_schema)};
+
+  EXPECT_EQ(descriptor.at("name").to_string(), "advanced_tool");
+  EXPECT_TRUE(descriptor.at("inputSchema").defines("$defs"));
+  EXPECT_TRUE(descriptor.at("inputSchema").defines("dependentRequired"));
+  EXPECT_TRUE(descriptor.at("inputSchema").defines("unevaluatedProperties"));
+  EXPECT_TRUE(descriptor.defines("outputSchema"));
+  EXPECT_EQ(descriptor.at("outputSchema").at("type").to_string(), "object");
+}
+
+TEST(initialize_negotiation_with_2024_11_05_legacy_date) {
+  // A legacy client from 2024-11-05 requesting initialize falls back to
+  // the latest handshake-compatible version (2025-11-25).
+  const auto request{sourcemeta::core::parse_json(R"JSON({
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": { "protocolVersion": "2024-11-05" }
+  })JSON")};
+
+  const sourcemeta::core::MCPServerCapabilities caps;
+  const sourcemeta::core::MCPImplementation server{.name = "srv",
+                                                   .version = "1.0.0"};
+  const auto envelope{
+      sourcemeta::core::mcp_make_initialize_result(request, caps, server)};
+
+  EXPECT_EQ(envelope.at("result").at("protocolVersion").to_string(),
+            "2025-11-25");
+  EXPECT_FALSE(envelope.at("result").defines("resultType"));
+  EXPECT_FALSE(envelope.at("result").defines("_meta"));
 }

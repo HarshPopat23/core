@@ -9,9 +9,10 @@
 #include <sourcemeta/core/jsonrpc.h>
 
 #include <cstddef>  // std::size_t
-#include <cstdint>  // std::int64_t, std::uint8_t
+#include <cstdint>  // std::int64_t, std::uint8_t, std::uint64_t
 #include <optional> // std::optional, std::nullopt
-#include <utility>  // std::to_underlying, std::unreachable
+#include <utility>  // std::pair, std::to_underlying, std::unreachable
+#include <vector>   // std::vector
 
 /// @defgroup mcp MCP
 /// @brief Helpers for building Model Context Protocol (MCP) envelopes.
@@ -124,7 +125,23 @@ constexpr JSON::StringView MCP_METHOD_NOTIFICATIONS_INITIALIZED{
     "notifications/initialized"};
 
 /// @ingroup mcp
-/// The MCP error code returned when a requested resource cannot be found.
+/// The MCP method name for the `server/discover` request.
+constexpr JSON::StringView MCP_METHOD_SERVER_DISCOVER{"server/discover"};
+
+/// @ingroup mcp
+/// The MCP method name for the `subscriptions/listen` request.
+constexpr JSON::StringView MCP_METHOD_SUBSCRIPTIONS_LISTEN{
+    "subscriptions/listen"};
+
+/// @ingroup mcp
+/// The MCP method name for the `notifications/subscriptions/acknowledged`
+/// notification.
+constexpr JSON::StringView MCP_METHOD_NOTIFICATIONS_SUBSCRIPTIONS_ACKNOWLEDGED{
+    "notifications/subscriptions/acknowledged"};
+
+/// @ingroup mcp
+/// The legacy MCP error code returned when a requested resource cannot be
+/// found.
 constexpr std::int64_t MCP_CODE_RESOURCE_NOT_FOUND{-32002};
 
 /// @ingroup mcp
@@ -133,18 +150,83 @@ constexpr std::int64_t MCP_CODE_RESOURCE_NOT_FOUND{-32002};
 constexpr std::int64_t MCP_CODE_URL_ELICITATION_REQUIRED{-32042};
 
 /// @ingroup mcp
-/// Check whether the given method name corresponds to an MCP request method
-/// (notifications excluded). For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// assert(sourcemeta::core::mcp_is_request_method("initialize"));
-/// assert(!sourcemeta::core::mcp_is_request_method("notifications/initialized"));
-/// ```
-constexpr auto mcp_is_request_method(const JSON::StringView method) noexcept
+/// The MCP error code indicating that a transport header disagreed with the
+/// request body.
+constexpr std::int64_t MCP_CODE_HEADER_MISMATCH{-32020};
+
+/// @ingroup mcp
+/// The MCP error code indicating that a client is missing a capability required
+/// to process a request.
+constexpr std::int64_t MCP_CODE_MISSING_REQUIRED_CLIENT_CAPABILITY{-32021};
+
+/// @ingroup mcp
+/// The MCP error code indicating that the client's requested protocol version
+/// is not supported.
+constexpr std::int64_t MCP_CODE_UNSUPPORTED_PROTOCOL_VERSION{-32022};
+
+/// @ingroup mcp
+/// The key used for request and result metadata objects.
+constexpr JSON::StringView MCP_META_KEY{"_meta"};
+
+/// @ingroup mcp
+/// The metadata key for the client's declared MCP protocol version.
+constexpr JSON::StringView MCP_META_PROTOCOL_VERSION{
+    "io.modelcontextprotocol/protocolVersion"};
+
+/// @ingroup mcp
+/// The metadata key for client capabilities in modern MCP requests.
+constexpr JSON::StringView MCP_META_CLIENT_CAPABILITIES{
+    "io.modelcontextprotocol/clientCapabilities"};
+
+/// @ingroup mcp
+/// The metadata key for client implementation info in modern MCP requests.
+constexpr JSON::StringView MCP_META_CLIENT_INFO{
+    "io.modelcontextprotocol/clientInfo"};
+
+/// @ingroup mcp
+/// The metadata key for the client's requested log level in modern MCP
+/// requests.
+constexpr JSON::StringView MCP_META_LOG_LEVEL{
+    "io.modelcontextprotocol/logLevel"};
+
+/// @ingroup mcp
+/// The metadata key for server implementation info in modern MCP results.
+constexpr JSON::StringView MCP_META_SERVER_INFO{
+    "io.modelcontextprotocol/serverInfo"};
+
+/// @ingroup mcp
+/// The metadata key for subscription identifiers in modern subscription results
+/// and notifications.
+constexpr JSON::StringView MCP_META_SUBSCRIPTION_ID{
+    "io.modelcontextprotocol/subscriptionId"};
+
+/// @ingroup mcp
+/// The HTTP header name declaring the client's MCP protocol version.
+constexpr JSON::StringView MCP_HEADER_PROTOCOL_VERSION{"MCP-Protocol-Version"};
+
+/// @ingroup mcp
+/// The HTTP header name declaring the MCP request method.
+constexpr JSON::StringView MCP_HEADER_METHOD{"Mcp-Method"};
+
+/// @ingroup mcp
+/// The HTTP header name declaring the target tool or resource name.
+constexpr JSON::StringView MCP_HEADER_NAME{"Mcp-Name"};
+
+/// @ingroup mcp
+/// Check whether the given method name corresponds to a valid MCP request
+/// method for the specified protocol version.
+constexpr auto mcp_is_request_method(const MCPProtocolVersion version,
+                                     const JSON::StringView method) noexcept
     -> bool {
+  if (version == MCPProtocolVersion::V_2026_07_28) {
+    return method == MCP_METHOD_SERVER_DISCOVER ||
+           method == MCP_METHOD_TOOLS_LIST || method == MCP_METHOD_TOOLS_CALL ||
+           method == MCP_METHOD_RESOURCES_LIST ||
+           method == MCP_METHOD_RESOURCES_READ ||
+           method == MCP_METHOD_RESOURCES_TEMPLATES_LIST ||
+           method == MCP_METHOD_SUBSCRIPTIONS_LISTEN;
+  }
+
   return method == MCP_METHOD_INITIALIZE || method == MCP_METHOD_PING ||
          method == MCP_METHOD_TOOLS_LIST || method == MCP_METHOD_TOOLS_CALL ||
          method == MCP_METHOD_RESOURCES_LIST ||
@@ -153,29 +235,94 @@ constexpr auto mcp_is_request_method(const JSON::StringView method) noexcept
 }
 
 /// @ingroup mcp
+/// Check whether the given method name corresponds to an MCP request method
+/// (notifications excluded) for legacy revisions.
+constexpr auto mcp_is_request_method(const JSON::StringView method) noexcept
+    -> bool {
+  return mcp_is_request_method(MCPProtocolVersion::V_2025_11_25, method);
+}
+
+/// @ingroup mcp
+/// Classification of MCP methods by protocol era.
+enum class MCPMethodEra : std::uint8_t {
+  /// The method exists only in legacy MCP revisions (e.g. `initialize`, `ping`,
+  /// `notifications/initialized`).
+  LegacyOnly,
+  /// The method exists only in modern MCP revisions (e.g. `server/discover`,
+  /// `subscriptions/listen`, `notifications/subscriptions/acknowledged`).
+  ModernOnly,
+  /// The method is supported across both legacy and modern revisions
+  /// (e.g. `tools/list`, `tools/call`, `resources/list`, etc.).
+  Shared,
+  /// The method is not recognized or supported by MCP.
+  Unsupported,
+};
+
+/// @ingroup mcp
+/// Classify an MCP method or notification into its protocol era.
+constexpr auto mcp_classify_method(const JSON::StringView method) noexcept
+    -> MCPMethodEra {
+  if (method == MCP_METHOD_INITIALIZE || method == MCP_METHOD_PING ||
+      method == MCP_METHOD_NOTIFICATIONS_INITIALIZED) {
+    return MCPMethodEra::LegacyOnly;
+  }
+  if (method == MCP_METHOD_SERVER_DISCOVER ||
+      method == MCP_METHOD_SUBSCRIPTIONS_LISTEN ||
+      method == MCP_METHOD_NOTIFICATIONS_SUBSCRIPTIONS_ACKNOWLEDGED) {
+    return MCPMethodEra::ModernOnly;
+  }
+  if (method == MCP_METHOD_TOOLS_LIST || method == MCP_METHOD_TOOLS_CALL ||
+      method == MCP_METHOD_RESOURCES_LIST ||
+      method == MCP_METHOD_RESOURCES_READ ||
+      method == MCP_METHOD_RESOURCES_TEMPLATES_LIST) {
+    return MCPMethodEra::Shared;
+  }
+  return MCPMethodEra::Unsupported;
+}
+
+/// @ingroup mcp
+/// Check whether the given method name is supported in the specified protocol
+/// version.
+constexpr auto mcp_supports_method(const MCPProtocolVersion version,
+                                   const JSON::StringView method) noexcept
+    -> bool {
+  const auto era{mcp_classify_method(method)};
+  if (version == MCPProtocolVersion::V_2026_07_28) {
+    return era == MCPMethodEra::ModernOnly || era == MCPMethodEra::Shared;
+  }
+  return era == MCPMethodEra::LegacyOnly || era == MCPMethodEra::Shared;
+}
+
+/// @ingroup mcp
+/// Check whether the given method name is legacy-only.
+constexpr auto mcp_is_legacy_only_method(const JSON::StringView method) noexcept
+    -> bool {
+  return mcp_classify_method(method) == MCPMethodEra::LegacyOnly;
+}
+
+/// @ingroup mcp
+/// Check whether the given method name is modern-only.
+constexpr auto mcp_is_modern_only_method(const JSON::StringView method) noexcept
+    -> bool {
+  return mcp_classify_method(method) == MCPMethodEra::ModernOnly;
+}
+
+/// @ingroup mcp
+/// Check whether the given method name is supported across both legacy and
+/// modern revisions.
+constexpr auto mcp_is_shared_method(const JSON::StringView method) noexcept
+    -> bool {
+  return mcp_classify_method(method) == MCPMethodEra::Shared;
+}
+
+/// @ingroup mcp
 /// Resolve an `MCP-Protocol-Version` header value into a known protocol
 /// version, or `std::nullopt` when the value is unrecognised. An absent header
 /// resolves to the oldest supported version per the Streamable HTTP transport.
-/// For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto resolved{
-///     sourcemeta::core::mcp_resolve_protocol_version("2025-11-25")};
-/// assert(resolved.has_value());
-/// assert(resolved.value() ==
-///        sourcemeta::core::MCPProtocolVersion::V_2025_11_25);
-/// ```
 constexpr auto
 mcp_resolve_protocol_version(const JSON::StringView header) noexcept
     -> std::optional<MCPProtocolVersion> {
   if (header.empty()) {
-    // Per the MCP Streamable HTTP transport spec: if the server does not
-    // receive an MCP-Protocol-Version header, and has no other way to identify
-    // the version, the server SHOULD assume protocol version 2025-03-26.
-    // https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#protocol-version-header
     return MCPProtocolVersion::V_2025_03_26;
   }
   if (header == "2026-07-28") {
@@ -191,6 +338,87 @@ mcp_resolve_protocol_version(const JSON::StringView header) noexcept
     return MCPProtocolVersion::V_2025_03_26;
   }
   return std::nullopt;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version uses the `initialize` /
+/// `notifications/initialized` handshake.
+constexpr auto
+mcp_uses_initialization_handshake(const MCPProtocolVersion version) noexcept
+    -> bool {
+  return version != MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version supports the `ping` request.
+constexpr auto mcp_supports_ping(const MCPProtocolVersion version) noexcept
+    -> bool {
+  return version != MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version uses protocol-level sessions.
+constexpr auto
+mcp_supports_protocol_sessions(const MCPProtocolVersion version) noexcept
+    -> bool {
+  return version != MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version requires per-request stateless metadata
+/// (`_meta`).
+constexpr auto
+mcp_requires_request_meta(const MCPProtocolVersion version) noexcept -> bool {
+  return version == MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version requires the `resultType` field on
+/// successful MCP results.
+constexpr auto
+mcp_requires_result_type(const MCPProtocolVersion version) noexcept -> bool {
+  return version == MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version requires or supports cacheable-result
+/// metadata (`ttlMs` and `cacheScope`).
+constexpr auto
+mcp_requires_cacheable_metadata(const MCPProtocolVersion version) noexcept
+    -> bool {
+  return version == MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version supports the `server/discover` request.
+constexpr auto
+mcp_supports_server_discover(const MCPProtocolVersion version) noexcept
+    -> bool {
+  return version == MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version supports the `subscriptions/listen`
+/// request.
+constexpr auto
+mcp_supports_subscriptions_listen(const MCPProtocolVersion version) noexcept
+    -> bool {
+  return version == MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// Whether the given protocol version supports Multi Round-Trip Results
+/// (MRTR).
+constexpr auto mcp_supports_mrtr(const MCPProtocolVersion version) noexcept
+    -> bool {
+  return version == MCPProtocolVersion::V_2026_07_28;
+}
+
+/// @ingroup mcp
+/// The latest protocol version that supports the `initialize` handshake.
+constexpr auto mcp_latest_initialization_version() noexcept
+    -> MCPProtocolVersion {
+  return MCPProtocolVersion::V_2025_11_25;
 }
 
 /// @ingroup mcp
@@ -257,32 +485,249 @@ mcp_supports_jsonrpc_batching(const MCPProtocolVersion version) noexcept
 }
 
 /// @ingroup mcp
-/// Build an MCP `text` content block carrying the given text payload. For
-/// example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto block{sourcemeta::core::mcp_make_text_block("hello")};
-/// assert(block.at("type").to_string() == "text");
-/// assert(block.at("text").to_string() == "hello");
-/// ```
+/// Cache scope for modern cacheable MCP results.
+enum class MCPCacheScope : std::uint8_t {
+  /// Public caching is permissible across multiple clients/users.
+  Public,
+  /// Result is private and must only be cached per-client/user.
+  Private,
+};
+
+/// @ingroup mcp
+/// Canonical string conversion for cache scope.
+constexpr auto mcp_cache_scope_string(const MCPCacheScope scope) noexcept
+    -> JSON::StringView {
+  switch (scope) {
+    case MCPCacheScope::Public:
+      return "public";
+    case MCPCacheScope::Private:
+      return "private";
+  }
+  std::unreachable();
+}
+
+/// @ingroup mcp
+/// Parse a canonical cache scope string.
+constexpr auto mcp_resolve_cache_scope(const JSON::StringView str) noexcept
+    -> std::optional<MCPCacheScope> {
+  if (str == "public") {
+    return MCPCacheScope::Public;
+  }
+  if (str == "private") {
+    return MCPCacheScope::Private;
+  }
+  return std::nullopt;
+}
+
+/// @ingroup mcp
+/// Cache policy specifying TTL in milliseconds and scope for cacheable MCP
+/// results.
+struct MCPCachePolicy {
+  /// Time-to-live in milliseconds. Must be non-negative.
+  std::uint64_t ttl_ms = 0;
+  /// Cache scope (public or private).
+  MCPCacheScope scope = MCPCacheScope::Public;
+};
+
+/// @ingroup mcp
+/// Client implementation information attached to modern MCP request metadata.
+struct MCPClientInfo {
+  /// Machine-readable client name.
+  JSON::StringView name;
+  /// Semver-compatible client version.
+  JSON::StringView version;
+  /// Optional human-readable title.
+  JSON::StringView title = {};
+  /// Optional human-readable description.
+  JSON::StringView description = {};
+};
+
+/// @ingroup mcp
+/// Capabilities advertised by an MCP client.
+struct MCPClientCapabilities {
+  /// Whether the client advertises roots.
+  bool roots = false;
+  /// Whether roots advertise `listChanged`.
+  bool roots_list_changed = false;
+  /// Whether the client advertises sampling.
+  bool sampling = false;
+  /// Whether the client advertises elicitation.
+  bool elicitation = false;
+  /// Optional extensions map for client capabilities.
+  std::optional<sourcemeta::core::JSON> extensions = std::nullopt;
+  /// Optional experimental map for client capabilities.
+  std::optional<sourcemeta::core::JSON> experimental = std::nullopt;
+};
+
+/// @ingroup mcp
+/// Parse client capabilities from a JSON object.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_parse_client_capabilities(const sourcemeta::core::JSON &capabilities)
+    -> MCPClientCapabilities;
+
+/// @ingroup mcp
+/// Serialize client capabilities to a JSON object.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_serialize_client_capabilities(
+    const MCPClientCapabilities &capabilities) -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Status returned by @ref mcp_validate_request_meta.
+enum class MCPRequestMetaStatus : std::uint8_t {
+  /// Request metadata is fully valid per MCP 2026-07-28.
+  Valid,
+  /// Request envelope lacks a `params` property.
+  MissingParams,
+  /// The `params` property is not a JSON object.
+  ParamsNotObject,
+  /// The `params` object lacks a `_meta` property.
+  MissingMeta,
+  /// The `_meta` property is not a JSON object.
+  MetaNotObject,
+  /// `_meta` lacks `io.modelcontextprotocol/protocolVersion`.
+  MissingProtocolVersion,
+  /// `io.modelcontextprotocol/protocolVersion` is not a string.
+  ProtocolVersionNotString,
+  /// `io.modelcontextprotocol/protocolVersion` is not a recognized version.
+  UnsupportedProtocolVersion,
+  /// `_meta` lacks `io.modelcontextprotocol/clientCapabilities`.
+  MissingClientCapabilities,
+  /// `io.modelcontextprotocol/clientCapabilities` is not a JSON object.
+  ClientCapabilitiesNotObject,
+  /// `io.modelcontextprotocol/clientInfo` is not a JSON object when present.
+  ClientInfoNotObject,
+};
+
+/// @ingroup mcp
+/// Parsed representation of modern request metadata.
+struct MCPRequestMeta {
+  /// The declared protocol version.
+  MCPProtocolVersion protocol_version = MCPProtocolVersion::V_2026_07_28;
+  /// Non-null pointer to client capabilities object within the request.
+  const sourcemeta::core::JSON *client_capabilities = nullptr;
+  /// Optional parsed client capabilities.
+  std::optional<MCPClientCapabilities> parsed_client_capabilities =
+      std::nullopt;
+  /// Optional client implementation info.
+  std::optional<MCPClientInfo> client_info = std::nullopt;
+  /// Optional requested log level.
+  std::optional<JSON::StringView> log_level = std::nullopt;
+  /// Non-null pointer to the entire `_meta` object within the request.
+  const sourcemeta::core::JSON *meta_object = nullptr;
+};
+
+/// @ingroup mcp
+/// Validate and extract modern MCP request metadata from a request envelope or
+/// params object.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_validate_request_meta(const sourcemeta::core::JSON &envelope_or_params)
+    -> std::pair<MCPRequestMetaStatus, std::optional<MCPRequestMeta>>;
+
+/// @ingroup mcp
+/// Read the declared protocol version from a modern MCP request envelope.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_protocol_version(const sourcemeta::core::JSON &envelope)
+    -> std::optional<MCPProtocolVersion>;
+
+/// @ingroup mcp
+/// Read client implementation information from a modern MCP request envelope.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_client_info(const sourcemeta::core::JSON &envelope)
+    -> std::optional<MCPClientInfo>;
+
+/// @ingroup mcp
+/// Read client capabilities object from a modern MCP request envelope.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_client_capabilities(const sourcemeta::core::JSON &envelope)
+    -> const sourcemeta::core::JSON *;
+
+/// @ingroup mcp
+/// Read the requested log level from a modern MCP request envelope.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_log_level(const sourcemeta::core::JSON &envelope)
+    -> std::optional<JSON::StringView>;
+
+/// @ingroup mcp
+/// Check whether a modern MCP request contains all required metadata.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_has_required_request_meta(const sourcemeta::core::JSON &envelope)
+    -> bool;
+
+/// @ingroup mcp
+/// Extract the request method declared in a JSON-RPC request body.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_method_from_body(const sourcemeta::core::JSON &envelope)
+    -> std::optional<JSON::StringView>;
+
+/// @ingroup mcp
+/// Extract the target tool, resource, or prompt name declared in a request body
+/// (used to validate against the `Mcp-Name` header).
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_name_from_body(const sourcemeta::core::JSON &envelope)
+    -> std::optional<JSON::StringView>;
+
+/// @ingroup mcp
+/// Build a JSON-RPC error response for unsupported protocol version (-32022).
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_error_unsupported_protocol_version(
+    const sourcemeta::core::JSON *identifier, const JSON::StringView requested,
+    const std::vector<JSON::StringView> &supported) -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Build a JSON-RPC error response for missing required client capability
+/// (-32021).
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_error_missing_required_capability(
+    const sourcemeta::core::JSON *identifier,
+    sourcemeta::core::JSON required_capabilities,
+    const JSON::StringView message = "Missing required client capability")
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Build a JSON-RPC error response for header mismatch (-32020).
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_error_header_mismatch(
+    const sourcemeta::core::JSON *identifier,
+    const JSON::StringView message = "Header mismatch")
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Build a JSON-RPC error response for header mismatch (-32020) with detailed
+/// header mismatch payload.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_error_header_mismatch(const sourcemeta::core::JSON *identifier,
+                                    const JSON::StringView header_name,
+                                    const JSON::StringView header_value,
+                                    const JSON::StringView body_value)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Validate transport header values against the parsed JSON-RPC request body.
+/// Returns a JSON-RPC error envelope if a mismatch is detected, or
+/// `std::nullopt` if headers match.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_validate_request_headers(
+    const std::optional<JSON::StringView> &header_method,
+    const std::optional<JSON::StringView> &header_name,
+    const sourcemeta::core::JSON &envelope)
+    -> std::optional<sourcemeta::core::JSON>;
+
+/// @ingroup mcp
+/// Build a version-aware JSON-RPC error response reporting that a resource
+/// was not found. Emits -32002 for legacy revisions, and -32602 (Invalid
+/// Params) for 2026-07-28.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_error_resource_not_found(const MCPProtocolVersion version,
+                                       const sourcemeta::core::JSON &identifier)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Build an MCP `text` content block carrying the given text payload.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_text_block(const JSON::StringView text) -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
-/// Build an MCP content block referencing a resource by URI. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto block{sourcemeta::core::mcp_make_resource_link(
-///     sourcemeta::core::MCPProtocolVersion::V_2025_11_25, "file:///foo",
-///     "text/plain")};
-/// assert(block.at("type").to_string() == "resource_link");
-/// ```
+/// Build an MCP content block referencing a resource by URI.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_resource_link(const MCPProtocolVersion version,
                             const JSON::StringView uri,
@@ -292,23 +737,42 @@ auto mcp_make_resource_link(const MCPProtocolVersion version,
     -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
+/// Implementation info advertised by an MCP server.
+struct MCPImplementation {
+  /// Short machine-readable server name.
+  JSON::StringView name;
+  /// Semver-compatible server version.
+  JSON::StringView version;
+  /// Optional human-readable title.
+  JSON::StringView title = {};
+  /// Optional human-readable description.
+  JSON::StringView description = {};
+  /// Optional public website URL.
+  JSON::StringView website_url = {};
+};
+
+/// @ingroup mcp
+/// Decorate a successful MCP result object with version-appropriate envelope
+/// fields (`resultType: "complete"` and optional
+/// `_meta.io.modelcontextprotocol/serverInfo` for modern versions).
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_decorate_result(
+    const MCPProtocolVersion version, sourcemeta::core::JSON result,
+    const std::optional<MCPImplementation> &server_info = std::nullopt)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Decorate an MCP result object with cache metadata (`ttlMs` and
+/// `cacheScope`) for modern versions.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_decorate_cacheable_result(
+    const MCPProtocolVersion version, sourcemeta::core::JSON result,
+    const std::optional<MCPCachePolicy> &cache_policy = std::nullopt)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
 /// Build a JSON-RPC envelope wrapping a successful MCP tool call response from
-/// the given result payload. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/json.h>
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-/// #include <utility>
-///
-/// const auto identifier{sourcemeta::core::JSON{1}};
-/// auto result{sourcemeta::core::JSON::make_object()};
-/// result.assign("foo", sourcemeta::core::JSON{42});
-/// const auto envelope{sourcemeta::core::mcp_make_tool_success(
-///     sourcemeta::core::MCPProtocolVersion::V_2025_11_25, identifier,
-///     std::move(result))};
-/// assert(envelope.at("result").at("isError").to_boolean() == false);
-/// ```
+/// the given result payload.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_tool_success(const MCPProtocolVersion version,
                            const sourcemeta::core::JSON &identifier,
@@ -317,24 +781,7 @@ auto mcp_make_tool_success(const MCPProtocolVersion version,
 
 /// @ingroup mcp
 /// Build a JSON-RPC envelope wrapping a successful MCP tool call response from
-/// caller-provided content blocks and a structured payload. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/json.h>
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-/// #include <utility>
-///
-/// const auto identifier{sourcemeta::core::JSON{1}};
-/// auto structured{sourcemeta::core::JSON::make_object()};
-/// structured.assign("ok", sourcemeta::core::JSON{true});
-/// auto blocks{sourcemeta::core::JSON::make_array()};
-/// blocks.push_back(sourcemeta::core::mcp_make_text_block("done"));
-/// const auto envelope{sourcemeta::core::mcp_make_tool_success(
-///     sourcemeta::core::MCPProtocolVersion::V_2025_11_25, identifier,
-///     std::move(structured), std::move(blocks))};
-/// assert(envelope.at("result").at("isError").to_boolean() == false);
-/// ```
+/// caller-provided content blocks and a structured payload.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_tool_success(const MCPProtocolVersion version,
                            const sourcemeta::core::JSON &identifier,
@@ -343,19 +790,18 @@ auto mcp_make_tool_success(const MCPProtocolVersion version,
     -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
+/// Build a version-aware JSON-RPC envelope wrapping a failed MCP tool call
+/// response with the given error message. For 2026-07-28, adds
+/// `resultType: "complete"`.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_tool_error(const MCPProtocolVersion version,
+                         const sourcemeta::core::JSON &identifier,
+                         const JSON::StringView message)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
 /// Build a JSON-RPC envelope wrapping a failed MCP tool call response with the
-/// given error message. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/json.h>
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto identifier{sourcemeta::core::JSON{1}};
-/// const auto envelope{
-///     sourcemeta::core::mcp_make_tool_error(identifier, "Boom")};
-/// assert(envelope.at("result").at("isError").to_boolean() == true);
-/// ```
+/// given error message (legacy compatibility overload).
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_tool_error(const sourcemeta::core::JSON &identifier,
                          const JSON::StringView message)
@@ -363,34 +809,13 @@ auto mcp_make_tool_error(const sourcemeta::core::JSON &identifier,
 
 /// @ingroup mcp
 /// Build a JSON-RPC error envelope reporting that an MCP resource URI could
-/// not be resolved. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/json.h>
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto identifier{sourcemeta::core::JSON{3}};
-/// const auto envelope{
-///     sourcemeta::core::mcp_make_error_resource_not_found(identifier)};
-/// assert(envelope.at("error").at("code").to_integer() == -32002);
-/// ```
+/// not be resolved (legacy compatibility overload emitting -32002).
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_error_resource_not_found(const sourcemeta::core::JSON &identifier)
     -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
-/// Build an MCP resource descriptor as used in `resources/list` responses. For
-/// example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto resource{sourcemeta::core::mcp_make_resource(
-///     "file:///a", "Alpha", "text/plain")};
-/// assert(resource.at("uri").to_string() == "file:///a");
-/// ```
+/// Build an MCP resource descriptor as used in `resources/list` responses.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_resource(const JSON::StringView uri, const JSON::StringView name,
                        const JSON::StringView mime_type,
@@ -400,16 +825,7 @@ auto mcp_make_resource(const JSON::StringView uri, const JSON::StringView name,
     -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
-/// Build an MCP `resources/read` content entry of `text` flavour. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto content{sourcemeta::core::mcp_make_resource_text_content(
-///     "file:///a", "text/plain", "Hello")};
-/// assert(content.at("text").to_string() == "Hello");
-/// ```
+/// Build an MCP `resources/read` content entry of `text` flavour.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_resource_text_content(const JSON::StringView uri,
                                     const JSON::StringView mime_type,
@@ -418,37 +834,22 @@ auto mcp_make_resource_text_content(const JSON::StringView uri,
 
 /// @ingroup mcp
 /// Wrap a pre-built array of content entries into the MCP `resources/read`
-/// result envelope. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/json.h>
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-/// #include <utility>
-///
-/// auto contents{sourcemeta::core::JSON::make_array()};
-/// contents.push_back(sourcemeta::core::mcp_make_resource_text_content(
-///     "file:///a", "text/plain", "Hello"));
-/// const auto result{
-///     sourcemeta::core::mcp_make_resources_read_result(std::move(contents))};
-/// assert(result.at("contents").size() == 1);
-/// ```
+/// result envelope.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_resources_read_result(
+    const MCPProtocolVersion version, sourcemeta::core::JSON contents,
+    const std::optional<MCPCachePolicy> &cache_policy = std::nullopt)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Wrap a pre-built array of content entries into the MCP `resources/read`
+/// result envelope (legacy compatibility overload).
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_resources_read_result(sourcemeta::core::JSON contents)
     -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
-/// Build a single entry for an MCP `resources/templates/list` response. For
-/// example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto entry{sourcemeta::core::mcp_make_resource_template(
-///     "file:///{path}", "Files", "Resolves a file path", "text/plain")};
-/// assert(entry.at("uriTemplate").to_string() == "file:///{path}");
-/// ```
+/// Build a single entry for an MCP `resources/templates/list` response.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_resource_template(const JSON::StringView uri_template,
                                 const JSON::StringView name,
@@ -473,17 +874,7 @@ struct MCPToolAnnotations {
 };
 
 /// @ingroup mcp
-/// Build a single entry for an MCP `tools/list` response. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto entry{sourcemeta::core::mcp_make_tool_descriptor(
-///     sourcemeta::core::MCPProtocolVersion::V_2025_11_25, "say", "Says hello",
-///     sourcemeta::core::parse_json(R"({ "type": "object" })"))};
-/// assert(entry.at("name").to_string() == "say");
-/// ```
+/// Build a single entry for an MCP `tools/list` response.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_tool_descriptor(
     const MCPProtocolVersion version, const JSON::StringView name,
@@ -492,24 +883,37 @@ auto mcp_make_tool_descriptor(
     const MCPToolAnnotations &annotations = {}) -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
-/// Implementation info advertised by an MCP server during the initialize
-/// handshake.
-struct MCPImplementation {
-  /// Short machine-readable server name.
-  JSON::StringView name;
-  /// Semver-compatible server version.
-  JSON::StringView version;
-  /// Optional human-readable title.
-  JSON::StringView title = {};
-  /// Optional human-readable description.
-  JSON::StringView description = {};
-  /// Optional public website URL.
-  JSON::StringView website_url = {};
-};
+/// Build an MCP `tools/list` result object. For 2026-07-28, adds
+/// `resultType: "complete"` and optional cache metadata.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_tools_list_result(
+    const MCPProtocolVersion version, sourcemeta::core::JSON tools,
+    const std::optional<JSON::StringView> next_cursor = std::nullopt,
+    const std::optional<MCPCachePolicy> &cache_policy = std::nullopt)
+    -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
-/// Boolean toggles for the MCP `capabilities` object returned during the
-/// initialize handshake.
+/// Build an MCP `resources/list` result object. For 2026-07-28, adds
+/// `resultType: "complete"` and optional cache metadata.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_resources_list_result(
+    const MCPProtocolVersion version, sourcemeta::core::JSON resources,
+    const std::optional<JSON::StringView> next_cursor = std::nullopt,
+    const std::optional<MCPCachePolicy> &cache_policy = std::nullopt)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Build an MCP `resources/templates/list` result object. For 2026-07-28, adds
+/// `resultType: "complete"` and optional cache metadata.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_resource_templates_list_result(
+    const MCPProtocolVersion version, sourcemeta::core::JSON resource_templates,
+    const std::optional<JSON::StringView> next_cursor = std::nullopt,
+    const std::optional<MCPCachePolicy> &cache_policy = std::nullopt)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Capabilities advertised by an MCP server.
 struct MCPServerCapabilities {
   /// Whether the server advertises prompts.
   bool prompts = false;
@@ -521,30 +925,29 @@ struct MCPServerCapabilities {
   bool logging = false;
   /// Whether the server advertises completions.
   bool completions = false;
+  /// Whether tools advertise `listChanged`.
+  bool tools_list_changed = false;
+  /// Whether resources advertise `subscribe`.
+  bool resources_subscribe = false;
+  /// Whether resources advertise `listChanged`.
+  bool resources_list_changed = false;
+  /// Whether prompts advertise `listChanged`.
+  bool prompts_list_changed = false;
+  /// Optional extensions map for capabilities.
+  std::optional<sourcemeta::core::JSON> extensions = std::nullopt;
+  /// Optional experimental map for capabilities.
+  std::optional<sourcemeta::core::JSON> experimental = std::nullopt;
 };
 
 /// @ingroup mcp
+/// Canonical list of supported MCP protocol version strings in descending
+/// order.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_supported_protocol_versions() -> std::vector<JSON::StringView>;
+
+/// @ingroup mcp
 /// Build the JSON-RPC envelope returned in response to an MCP `initialize`
-/// request. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/json.h>
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto request{sourcemeta::core::parse_json(R"JSON({
-///   "jsonrpc": "2.0",
-///   "id": 1,
-///   "method": "initialize",
-///   "params": { "protocolVersion": "2025-11-25" }
-/// })JSON")};
-/// const sourcemeta::core::MCPServerCapabilities capabilities;
-/// const sourcemeta::core::MCPImplementation server{"srv", "1.0.0"};
-/// const auto envelope{sourcemeta::core::mcp_make_initialize_result(
-///     request, capabilities, server)};
-/// assert(envelope.at("result").at("protocolVersion").to_string() ==
-///        "2025-11-25");
-/// ```
+/// request.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_make_initialize_result(const sourcemeta::core::JSON &request,
                                 const MCPServerCapabilities &capabilities,
@@ -553,25 +956,62 @@ auto mcp_make_initialize_result(const sourcemeta::core::JSON &request,
     -> sourcemeta::core::JSON;
 
 /// @ingroup mcp
-/// Borrow the `arguments` object from a JSON-RPC `tools/call` envelope, or
-/// return `nullptr` if no `arguments` object is present. The returned pointer
-/// is valid for the lifetime of the input envelope. For example:
-///
-/// ```cpp
-/// #include <sourcemeta/core/json.h>
-/// #include <sourcemeta/core/mcp.h>
-/// #include <cassert>
-///
-/// const auto envelope{sourcemeta::core::parse_json(R"JSON({
-///   "jsonrpc": "2.0",
-///   "id": 1,
-///   "method": "tools/call",
-///   "params": { "name": "foo", "arguments": { "x": 1 } }
-/// })JSON")};
-/// const auto *arguments{sourcemeta::core::mcp_tool_call_arguments(envelope)};
-/// assert(arguments != nullptr);
-/// assert(arguments->at("x").to_integer() == 1);
-/// ```
+/// Build the JSON-RPC response envelope for an MCP modern `server/discover`
+/// request.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_server_discover_result(
+    const sourcemeta::core::JSON &identifier,
+    const MCPServerCapabilities &capabilities, const MCPImplementation &server,
+    const std::vector<JSON::StringView> &supported_versions = {},
+    const JSON::StringView instructions = {},
+    const MCPCachePolicy &cache_policy = {.ttl_ms = 3600000,
+                                          .scope = MCPCacheScope::Public})
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Build an MCP Multi Round-Trip Result (`input_required`).
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_input_required_result(
+    const sourcemeta::core::JSON &identifier,
+    std::optional<sourcemeta::core::JSON> input_requests = std::nullopt,
+    std::optional<JSON::StringView> request_state = std::nullopt)
+    -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Access `inputResponses` from an MRTR continuation request envelope.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_input_responses(const sourcemeta::core::JSON &envelope)
+    -> const sourcemeta::core::JSON *;
+
+/// @ingroup mcp
+/// Access `requestState` token from an MRTR continuation request envelope.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_state(const sourcemeta::core::JSON &envelope)
+    -> std::optional<JSON::StringView>;
+
+/// @ingroup mcp
+/// Build an acknowledgement notification for `subscriptions/listen`.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_subscription_acknowledged_notification(
+    const JSON::StringView subscription_id,
+    sourcemeta::core::JSON notifications) -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Build a graceful close response for `subscriptions/listen`.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_make_subscription_close_result(
+    const sourcemeta::core::JSON &identifier,
+    const JSON::StringView subscription_id) -> sourcemeta::core::JSON;
+
+/// @ingroup mcp
+/// Access `io.modelcontextprotocol/subscriptionId` from request or result
+/// metadata.
+SOURCEMETA_CORE_MCP_EXPORT
+auto mcp_request_subscription_id(const sourcemeta::core::JSON &envelope)
+    -> std::optional<JSON::StringView>;
+
+/// @ingroup mcp
+/// Borrow the `arguments` object from a JSON-RPC `tools/call` envelope.
 SOURCEMETA_CORE_MCP_EXPORT
 auto mcp_tool_call_arguments(const sourcemeta::core::JSON &envelope)
     -> const sourcemeta::core::JSON *;
