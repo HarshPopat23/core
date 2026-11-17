@@ -1,6 +1,7 @@
 #include <sourcemeta/core/benchmark.h>
 
 #include <algorithm> // std::ranges
+#include <array>     // std::array
 #include <cassert>   // assert
 
 #include <sourcemeta/core/io.h>
@@ -20,6 +21,17 @@
 static auto opaque(std::size_t value) -> std::size_t {
   sourcemeta::core::benchmark_do_not_optimize(value);
   return value;
+}
+
+static auto benchmark_property_key_hash(sourcemeta::core::BenchmarkState &state,
+                                        const std::size_t key_length) -> void {
+  const auto length{opaque(key_length)};
+  const sourcemeta::core::JSON::String value(length, 'x');
+  const sourcemeta::core::PropertyHashJSON<sourcemeta::core::JSON::String>
+      hasher;
+  for (auto iteration : state) {
+    sourcemeta::core::benchmark_do_not_optimize(hasher(value));
+  }
 }
 
 BENCHMARK(JSON_Array_Of_Objects_Unique) {
@@ -1683,5 +1695,89 @@ BENCHMARK(JSON_Object_At_Long_Keys) {
   for (auto iteration : state) {
     const auto &result{document.at(key)};
     sourcemeta::core::benchmark_do_not_optimize(result);
+  }
+}
+
+BENCHMARK(JSON_String_Key_Hash_0) { benchmark_property_key_hash(state, 0); }
+
+BENCHMARK(JSON_String_Key_Hash_1) { benchmark_property_key_hash(state, 1); }
+
+BENCHMARK(JSON_String_Key_Hash_7) { benchmark_property_key_hash(state, 7); }
+
+BENCHMARK(JSON_String_Key_Hash_8) { benchmark_property_key_hash(state, 8); }
+
+BENCHMARK(JSON_String_Key_Hash_9) { benchmark_property_key_hash(state, 9); }
+
+BENCHMARK(JSON_String_Key_Hash_11) { benchmark_property_key_hash(state, 11); }
+
+BENCHMARK(JSON_String_Key_Hash_15) { benchmark_property_key_hash(state, 15); }
+
+BENCHMARK(JSON_String_Key_Hash_16) { benchmark_property_key_hash(state, 16); }
+
+BENCHMARK(JSON_String_Key_Hash_17) { benchmark_property_key_hash(state, 17); }
+
+BENCHMARK(JSON_String_Key_Hash_23) { benchmark_property_key_hash(state, 23); }
+
+BENCHMARK(JSON_String_Key_Hash_24) { benchmark_property_key_hash(state, 24); }
+
+BENCHMARK(JSON_String_Key_Hash_30) { benchmark_property_key_hash(state, 30); }
+
+BENCHMARK(JSON_String_Key_Hash_31) { benchmark_property_key_hash(state, 31); }
+
+BENCHMARK(JSON_String_Key_Hash_32) { benchmark_property_key_hash(state, 32); }
+
+BENCHMARK(JSON_String_Key_Hash_33) { benchmark_property_key_hash(state, 33); }
+
+BENCHMARK(JSON_String_Key_Hash_Mixed_Lengths_Raw) {
+  // Changing the length within the measured loop exercises runtime dispatch
+  // across small-copy thresholds and the transition to an imperfect hash.
+  const std::array<std::size_t, 16> lengths{
+      {1, 7, 8, 9, 10, 11, 15, 16, 17, 23, 24, 30, 31, 32, 64, 100}};
+  const sourcemeta::core::JSON::String value(100, 'x');
+  const sourcemeta::core::PropertyHashJSON<sourcemeta::core::JSON::String>
+      hasher;
+  std::size_t cursor{0};
+  for (auto iteration : state) {
+    const auto length{lengths[cursor]};
+    sourcemeta::core::benchmark_do_not_optimize(hasher(value.data(), length));
+    cursor = (cursor + 1) % lengths.size();
+  }
+}
+
+BENCHMARK(JSON_String_Key_Hash_Mixed_Lengths) {
+  const std::array<std::size_t, 16> lengths{
+      {1, 7, 8, 9, 10, 11, 15, 16, 17, 23, 24, 30, 31, 32, 64, 100}};
+  std::vector<sourcemeta::core::JSON::String> keys;
+  keys.reserve(lengths.size());
+  for (const auto length : lengths) {
+    keys.emplace_back(opaque(length), 'x');
+  }
+  const sourcemeta::core::PropertyHashJSON<sourcemeta::core::JSON::String>
+      hasher;
+  std::size_t cursor{0};
+  for (auto iteration : state) {
+    sourcemeta::core::benchmark_do_not_optimize(hasher(keys[cursor]));
+    cursor = (cursor + 1) % keys.size();
+  }
+}
+
+BENCHMARK(JSON_Object_At_Mixed_Key_Lengths) {
+  // Build the object before measuring so the result includes hashing and
+  // lookup, without timing insertion or allocation.
+  const std::array<std::size_t, 16> lengths{
+      {1, 7, 8, 9, 10, 11, 15, 16, 17, 23, 24, 30, 31, 32, 64, 100}};
+  std::vector<sourcemeta::core::JSON::String> keys;
+  keys.reserve(lengths.size());
+  auto document{sourcemeta::core::JSON::make_object()};
+  for (const auto length : lengths) {
+    keys.emplace_back(opaque(length), 'x');
+    document.assign(keys.back(), sourcemeta::core::JSON{true});
+  }
+  std::size_t cursor{0};
+  for (auto iteration : state) {
+    const auto &result{document.at(keys[cursor])};
+    assert(result.to_boolean());
+    sourcemeta::core::benchmark_do_not_optimize(result);
+    cursor = (cursor + 1) % keys.size();
   }
 }
