@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 project(core_http_usockets LANGUAGES CXX)
 
-find_package(Core REQUIRED)
+find_package(Core REQUIRED COMPONENTS http)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(USOCKETS_ROOT "" CACHE PATH "Path to a built uSockets checkout")
 find_path(USOCKETS_INCLUDE_DIR libusockets.h
